@@ -341,38 +341,49 @@ def main():
         fig_proj.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), categoryorder="total ascending")
         st.plotly_chart(fig_proj, use_container_width=True)
 
-    with col_right:
-        st.markdown('<div class="section-header">AI Tool Adoption</div>', unsafe_allow_html=True)
-        tool_data = fdf["Tool"].dropna().value_counts().reset_index()
-        tool_data.columns = ["Tool", "Count"]
-        if not tool_data.empty:
-            fig_donut = px.pie(
-                tool_data, names="Tool", values="Count",
-                hole=0.5,
-                color_discrete_sequence=CHART_COLORS
-            )
-            fig_donut.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="#1A2B3C",
-                font=dict(color="#FFFFFF", family="Arial"),
-                margin=dict(l=10, r=10, t=60, b=10),
-                height=380,
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom", y=1.02,
-                    xanchor="center", x=0.5,
-                    font=dict(color="#FFFFFF", size=10),
-                    bgcolor="rgba(0,0,0,0)"
-                )
-            )
-            fig_donut.update_traces(
-                textfont=dict(color="white", size=11),
-                textposition="inside",
-                textinfo="percent+label"
-            )
-            st.plotly_chart(fig_donut, use_container_width=True)
-        else:
-            st.info("No tool data available.")
+    with col_right:                                                                                                                                                                                             
+          st.markdown('<div class="section-header">AI Tool Adoption</div>', unsafe_allow_html=True)                                                                                                               
+          # Explode semicolon-separated tools, count individually                                                                                                                                                 
+          tools_series = fdf["Tool"].dropna().str.split(";").explode().str.strip()                                                                                                                                
+          tool_data = tools_series.value_counts().reset_index()                                                                                                                                                   
+          tool_data.columns = ["Tool", "Count"]                                                                                                                                                                   
+          # Keep top 8 tools only                                                                                                                                                                                 
+          tool_data = tool_data.head(8)                                                                                                                                                                           
+          total_tool_count = tool_data["Count"].sum()                                                                                                                                                             
+          tool_data["Pct"] = (tool_data["Count"] / total_tool_count * 100).round(1)                                                                                                                               
+          tool_data["hover"] = tool_data.apply(                                                                                                                                                                   
+              lambda r: f"<b>{r['Tool']}</b><br>Users: {r['Count']}<br>Usage: {r['Pct']}%", axis=1                                                                                                                
+          )                                                                                                                                                                                                       
+          if not tool_data.empty:                                                                                                                                                                                 
+              fig_donut = px.pie(                                                                                                                                                                                 
+                  tool_data, names="Tool", values="Count",                                                                                                                                                        
+                  hole=0.5,                                                                                                                                                                                       
+                  color_discrete_sequence=CHART_COLORS,                                                                                                                                                           
+                  custom_data=["hover"]                                                                                                                                                                           
+              )                                                                                                                                                                                                   
+              fig_donut.update_layout(                                                                                                                                                                            
+                  paper_bgcolor="rgba(0,0,0,0)",                                                                                                                                                                  
+                  plot_bgcolor="#1A2B3C",                                                                                                                                                                         
+                  font=dict(color="#FFFFFF", family="Arial"),                                                                                                                                                     
+                  margin=dict(l=10, r=10, t=60, b=10),                                                                                                                                                            
+                  height=380,                                                                                                                                                                                     
+                  legend=dict(                                                                                                                                                                                    
+                      orientation="h",                                                                                                                                                                            
+                      yanchor="bottom", y=1.02,                                                                                                                                                                   
+                      xanchor="center", x=0.5,                                                                                                                                                                    
+                      font=dict(color="#FFFFFF", size=10),                                                                                                                                                        
+                      bgcolor="rgba(0,0,0,0)"                                                                                                                                                                     
+                  )                                                                                                                                                                                               
+              )                                                                                                                                                                                                   
+              fig_donut.update_traces(                                                                                                                                                                            
+                  textfont=dict(color="white", size=11),                                                                                                                                                          
+                  textposition="inside",                                                                                                                                                                          
+                  textinfo="percent",                                                                                                                                                                             
+                  hovertemplate="%{customdata[0]}<extra></extra>"                                                                                                                                                 
+              )                                                                                                                                                                                                   
+              st.plotly_chart(fig_donut, use_container_width=True)                                                                                                                                                
+          else:                                                                                                                                                                                                   
+              st.info("No tool data available.")               
 
     # ── Row 3: Activities + Frequency + Trend + Blockers ─────────────────────
     col1, col2, col3 = st.columns([2, 2, 2])
