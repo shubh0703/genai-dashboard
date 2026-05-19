@@ -15,60 +15,72 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ─── Dark Theme CSS ──────────────────────────────────────────────────────────
+# ─── EPAM Theme CSS ──────────────────────────────────────────────────────────
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
+
+    /* ── EPAM Brand Colors ──
+       Background:   #1B1F2E  (deep navy)
+       Surface:      #252A3A  (card/panel)
+       Border:       #333850  (subtle)
+       Accent:       #FF6B00  (EPAM orange)
+       Accent2:      #CC5500  (hover orange)
+       Text primary: #FFFFFF
+       Text muted:   #8A93B0
+    */
+
     /* Main background */
-    .stApp { background-color: #0D1B2A; color: #FFFFFF; }
-    [data-testid="stAppViewContainer"] { background-color: #0D1B2A; }
-    [data-testid="stHeader"] { background-color: #0D1B2A; }
-    section[data-testid="stSidebar"] { background-color: #0D1B2A; }
+    .stApp { background-color: #1B1F2E; color: #FFFFFF; font-family: 'Source Sans Pro', Arial, sans-serif; }
+    [data-testid="stAppViewContainer"] { background-color: #1B1F2E; }
+    [data-testid="stHeader"] { background-color: #1B1F2E; }
+    section[data-testid="stSidebar"] { background-color: #1B1F2E; }
 
     /* KPI Cards */
     .kpi-card {
-        background-color: #1A2B3C;
-        border: 1px solid #2A3B4C;
-        border-top: 2px solid #00C2C7;
-        border-radius: 8px;
+        background-color: #252A3A;
+        border: 1px solid #333850;
+        border-top: 3px solid #FF6B00;
+        border-radius: 6px;
         padding: 14px 18px 12px 18px;
         text-align: left;
         height: 110px;
         overflow: hidden;
-        font-family: Arial, sans-serif;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
     }
     .kpi-label {
         font-size: 10px;
-        font-family: Arial, sans-serif;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
         font-weight: 600;
-        color: #7A9BB5;
-        letter-spacing: 1.2px;
+        color: #8A93B0;
+        letter-spacing: 1.4px;
         text-transform: uppercase;
         margin-bottom: 6px;
     }
     .kpi-value {
         font-size: 28px;
         font-weight: 700;
-        font-family: Arial, sans-serif;
-        color: #00C2C7;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
+        color: #FF6B00;
         line-height: 1.15;
     }
     .kpi-value-white {
         font-size: 22px;
         font-weight: 700;
-        font-family: Arial, sans-serif;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
         color: #FFFFFF;
         line-height: 1.15;
     }
     .kpi-sub {
         font-size: 11px;
-        font-family: Arial, sans-serif;
-        color: #7A9BB5;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
+        color: #8A93B0;
         margin-top: 5px;
     }
     .kpi-sub-teal {
         font-size: 11px;
-        font-family: Arial, sans-serif;
-        color: #00C2C7;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
+        color: #FF6B00;
         margin-top: 5px;
         font-weight: 600;
     }
@@ -76,82 +88,98 @@ st.markdown("""
     /* Section headers */
     .section-header {
         font-size: 11px;
-        font-weight: 600;
-        color: #8899AA;
-        letter-spacing: 1.5px;
+        font-weight: 700;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
+        color: #8A93B0;
+        letter-spacing: 1.6px;
         text-transform: uppercase;
         margin-bottom: 8px;
-        padding-bottom: 4px;
-        border-bottom: 1px solid #2A3B4C;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #333850;
     }
 
     /* Dashboard header */
     .dash-header {
-        background-color: #1A2B3C;
-        border-radius: 8px;
+        background-color: #252A3A;
+        border-radius: 6px;
         padding: 14px 20px;
         margin-bottom: 16px;
-        border: 1px solid #2A3B4C;
+        border: 1px solid #333850;
+        border-left: 4px solid #FF6B00;
     }
     .dash-title {
         font-size: 20px;
         font-weight: 700;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
         color: #FFFFFF;
     }
     .dash-subtitle {
         font-size: 11px;
-        color: #8899AA;
-        margin-top: 2px;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
+        color: #8A93B0;
+        margin-top: 3px;
     }
 
     /* Filter bar */
     .filter-bar {
-        background-color: #1A2B3C;
-        border-radius: 8px;
+        background-color: #252A3A;
+        border-radius: 6px;
         padding: 10px 16px;
         margin-bottom: 16px;
-        border: 1px solid #2A3B4C;
+        border: 1px solid #333850;
     }
 
     /* Selectbox styling */
     .stSelectbox > div > div {
-        background-color: #1A2B3C !important;
+        background-color: #252A3A !important;
         color: #FFFFFF !important;
-        border: 1px solid #2A3B4C !important;
+        border: 1px solid #333850 !important;
+        font-family: 'Source Sans Pro', Arial, sans-serif !important;
     }
-    .stSelectbox label { color: #8899AA !important; font-size: 11px !important; }
+    .stSelectbox label {
+        color: #8A93B0 !important;
+        font-size: 11px !important;
+        font-family: 'Source Sans Pro', Arial, sans-serif !important;
+    }
 
     /* Table styling */
-    .stDataFrame { background-color: #1A2B3C; }
+    .stDataFrame { background-color: #252A3A; }
     thead tr th {
-        background-color: #0D1B2A !important;
-        color: #8899AA !important;
+        background-color: #1B1F2E !important;
+        color: #8A93B0 !important;
         font-size: 11px !important;
+        font-family: 'Source Sans Pro', Arial, sans-serif !important;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    tbody tr td { color: #FFFFFF !important; font-size: 13px !important; }
-    tbody tr:hover td { background-color: #2A3B4C !important; }
+    tbody tr td {
+        color: #FFFFFF !important;
+        font-size: 13px !important;
+        font-family: 'Source Sans Pro', Arial, sans-serif !important;
+    }
+    tbody tr:hover td { background-color: #2E3448 !important; }
 
     /* Divider */
-    hr { border-color: #2A3B4C; }
+    hr { border-color: #333850; }
 
     /* Metric delta */
-    [data-testid="stMetricDelta"] { color: #00C2C7; }
+    [data-testid="stMetricDelta"] { color: #FF6B00; }
 
     /* Plotly chart background fix */
     .js-plotly-plot { background-color: transparent !important; }
 
-    /* Refresh button */
+    /* Refresh button — EPAM orange */
     .stButton > button {
-        background-color: #00C2C7;
-        color: #0D1B2A;
+        background-color: #FF6B00;
+        color: #FFFFFF;
         font-weight: 700;
+        font-family: 'Source Sans Pro', Arial, sans-serif;
         border: none;
-        border-radius: 6px;
-        padding: 6px 16px;
+        border-radius: 4px;
+        padding: 6px 18px;
+        letter-spacing: 0.5px;
     }
-    .stButton > button:hover { background-color: #00A8AD; }
+    .stButton > button:hover { background-color: #CC5500; color: #FFFFFF; }
 
     /* Hide streamlit branding */
     #MainMenu { visibility: hidden; }
@@ -164,18 +192,18 @@ SHEET_ID = "1pBTpsIqJzK6CyhLIQz8H8wKSI3xLQzxa74L-JISFPvc"
 CALCULATED_SHEET = "Calculated"
 
 CHART_COLORS = [
-    "#00C2C7", "#4B9FE1", "#7B61FF", "#FF6B6B", "#FFB347",
-    "#98D85B", "#FF8C94", "#A8E6CF", "#FFD3B6", "#DCEDC1"
+    "#FF6B00", "#4B9FE1", "#A259FF", "#00C2C7", "#FFB347",
+    "#57C785", "#FF4F6B", "#7EC8E3", "#FFA07A", "#B0C4DE"
 ]
 
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="#1A2B3C",
-    font=dict(color="#FFFFFF", family="Arial"),
+    plot_bgcolor="#252A3A",
+    font=dict(color="#FFFFFF", family="Source Sans Pro, Arial"),
     margin=dict(l=10, r=10, t=30, b=10),
     legend=dict(
         bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#FFFFFF", size=11)
+        font=dict(color="#FFFFFF", size=11, family="Source Sans Pro, Arial")
     )
 )
 
@@ -473,10 +501,10 @@ def main():
     # ── Row 3: Activities + Frequency + Trend + Blockers ─────────────────────
     col1, col2, col3 = st.columns([2, 2, 2])
 
-    AXIS_STYLE = dict(color="#8899AA", gridcolor="#2A3B4C", tickfont=dict(size=12, family="Arial"))
-    TICK_STYLE = dict(color="#FFFFFF", tickfont=dict(size=12, family="Arial"), automargin=True)
-    TITLE_FONT = dict(size=12, color="#8899AA", family="Arial")
-    BAR_COLOR  = CHART_COLORS[0]   # consistent teal across all bar charts
+    AXIS_STYLE = dict(color="#8A93B0", gridcolor="#333850", tickfont=dict(size=12, family="Source Sans Pro, Arial"))
+    TICK_STYLE = dict(color="#FFFFFF", tickfont=dict(size=12, family="Source Sans Pro, Arial"), automargin=True)
+    TITLE_FONT = dict(size=12, color="#8A93B0", family="Source Sans Pro, Arial")
+    BAR_COLOR  = CHART_COLORS[0]   # EPAM orange as primary bar color
 
     with col1:
         st.markdown('<div class="section-header">Top Activities / Use Cases</div>', unsafe_allow_html=True)
