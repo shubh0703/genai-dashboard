@@ -324,30 +324,67 @@ def main():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Row 2: Hours by Project + Tool Adoption + AI Usage by Project ────────
-    col_left, col_right = st.columns([3, 2])
+    # ── Row 2: Hours by Project | AI Usage by Project | AI Tool Adoption ─────
+    col_left, col_mid, col_right = st.columns([3, 3, 2])
 
     with col_left:
         st.markdown('<div class="section-header">Hours Saved by Project</div>', unsafe_allow_html=True)
         proj_data = fdf.groupby("Project")["Hours Saved"].sum().reset_index().sort_values("Hours Saved", ascending=False)
         fig_proj = px.bar(
             proj_data, x="Hours Saved", y="Project",
-            orientation="h",
-            color="Project",
+            orientation="h", color="Project",
             color_discrete_sequence=CHART_COLORS
         )
-        fig_proj.update_layout(**PLOTLY_LAYOUT, height=380, showlegend=False)
-        fig_proj.update_xaxes(color="#8899AA", gridcolor="#2A3B4C")
-        fig_proj.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), categoryorder="total ascending")
+        fig_proj.update_layout(**PLOTLY_LAYOUT, height=420, showlegend=False)
+        fig_proj.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Hours Saved")
+        fig_proj.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), categoryorder="total ascending", automargin=True)
+        fig_proj.update_traces(hovertemplate="<b>%{y}</b><br>Hours Saved: %{x}<extra></extra>")
         st.plotly_chart(fig_proj, use_container_width=True)
+
+    with col_mid:
+        st.markdown('<div class="section-header">AI Usage by Project</div>', unsafe_allow_html=True)
+
+        def freq_to_score(freq):
+            if pd.isna(freq): return 0
+            f = str(freq).lower().strip()
+            if "multiple" in f or "3-4 times" in f: return 125
+            elif "every day" in f or "daily" in f or "at least once" in f: return 100
+            elif "3-4 days" in f or "3–4 days" in f: return 75
+            elif "1-2 days" in f or "1–2 days" in f: return 40
+            else: return 0
+
+        usage_proj = fdf.copy()
+        usage_proj["Usage Score"] = usage_proj["Frequency"].apply(freq_to_score)
+        usage_proj_data = usage_proj.groupby("Project")["Usage Score"].mean().reset_index()
+        usage_proj_data.columns = ["Project", "Avg AI Usage %"]
+        usage_proj_data["Avg AI Usage %"] = usage_proj_data["Avg AI Usage %"].round(1)
+        usage_proj_data["Usage Label"] = usage_proj_data["Avg AI Usage %"].apply(
+            lambda x: ">100%" if x >= 125 else f"{x:.0f}%"
+        )
+        # Highest to lowest (descending) — categoryorder="total ascending" renders top-to-bottom
+        usage_proj_data = usage_proj_data.sort_values("Avg AI Usage %", ascending=False)
+
+        fig_usage = px.bar(
+            usage_proj_data, x="Avg AI Usage %", y="Project",
+            orientation="h", color="Project",
+            color_discrete_sequence=CHART_COLORS,
+            text="Usage Label"
+        )
+        fig_usage.update_layout(**PLOTLY_LAYOUT, height=420, showlegend=False)
+        fig_usage.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Avg AI Usage %", range=[0, 145])
+        fig_usage.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), categoryorder="total ascending", automargin=True)
+        fig_usage.update_traces(
+            textposition="outside",
+            textfont=dict(color="white", size=11),
+            hovertemplate="<b>%{y}</b><br>Avg AI Usage: %{x:.0f}%<extra></extra>"
+        )
+        st.plotly_chart(fig_usage, use_container_width=True)
 
     with col_right:
         st.markdown('<div class="section-header">AI Tool Adoption</div>', unsafe_allow_html=True)
-        # Explode semicolon-separated tools, count individually
         tools_series = fdf["Tool"].dropna().str.split(";").explode().str.strip()
         tool_data = tools_series.value_counts().reset_index()
         tool_data.columns = ["Tool", "Count"]
-        # Keep top 8 tools only
         tool_data = tool_data.head(8)
         total_tool_count = tool_data["Count"].sum()
         tool_data["Pct"] = (tool_data["Count"] / total_tool_count * 100).round(1)
@@ -366,10 +403,9 @@ def main():
                 plot_bgcolor="#1A2B3C",
                 font=dict(color="#FFFFFF", family="Arial"),
                 margin=dict(l=10, r=10, t=60, b=10),
-                height=380,
+                height=420,
                 legend=dict(
-                    orientation="h",
-                    yanchor="bottom", y=1.02,
+                    orientation="h", yanchor="bottom", y=1.02,
                     xanchor="center", x=0.5,
                     font=dict(color="#FFFFFF", size=10),
                     bgcolor="rgba(0,0,0,0)"
@@ -384,46 +420,6 @@ def main():
             st.plotly_chart(fig_donut, use_container_width=True)
         else:
             st.info("No tool data available.")
-
-    # ── AI Usage by Project ───────────────────────────────────────────────────
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div class="section-header">AI Usage by Project</div>', unsafe_allow_html=True)
-
-    def freq_to_score(freq):
-        if pd.isna(freq): return 0
-        f = str(freq).lower().strip()
-        if "multiple" in f or "3-4 times" in f: return 125
-        elif "every day" in f or "daily" in f or "at least once" in f: return 100
-        elif "3-4 days" in f or "3–4 days" in f: return 75
-        elif "1-2 days" in f or "1–2 days" in f: return 40
-        else: return 0
-
-    usage_proj = fdf.copy()
-    usage_proj["Usage Score"] = usage_proj["Frequency"].apply(freq_to_score)
-    usage_proj_data = usage_proj.groupby("Project")["Usage Score"].mean().reset_index()
-    usage_proj_data.columns = ["Project", "Avg AI Usage %"]
-    usage_proj_data["Avg AI Usage %"] = usage_proj_data["Avg AI Usage %"].round(1)
-    usage_proj_data["Usage Label"] = usage_proj_data["Avg AI Usage %"].apply(
-        lambda x: f"{x:.0f}%" if x < 125 else f">100%"
-    )
-    usage_proj_data = usage_proj_data.sort_values("Avg AI Usage %", ascending=True)
-
-    fig_usage = px.bar(
-        usage_proj_data, x="Avg AI Usage %", y="Project",
-        orientation="h",
-        color="Project",
-        color_discrete_sequence=CHART_COLORS,
-        text="Usage Label"
-    )
-    fig_usage.update_layout(**PLOTLY_LAYOUT, height=380, showlegend=False)
-    fig_usage.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Avg AI Usage %", range=[0, 140])
-    fig_usage.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), automargin=True)
-    fig_usage.update_traces(
-        textposition="outside",
-        textfont=dict(color="white", size=11),
-        hovertemplate="<b>%{y}</b><br>Avg AI Usage: %{x:.0f}%<extra></extra>"
-    )
-    st.plotly_chart(fig_usage, use_container_width=True)
 
     # ── Row 3: Activities + Frequency + Trend + Blockers ─────────────────────
     col1, col2, col3 = st.columns([2, 2, 2])
