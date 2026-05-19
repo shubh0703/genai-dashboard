@@ -274,8 +274,8 @@ def main():
     def build_week_options(data):
         data = data.copy()
         data["Submission Date"] = pd.to_datetime(data["Submission Date"], errors="coerce")
-        data["_week_start"] = data["Submission Date"].dt.to_period("W").apply(lambda p: p.to_timestamp())
-        data["_week_end"] = data["Submission Date"].dt.to_period("W").apply(lambda p: p.to_timestamp("T"))
+        data["_week_start"] = data["Submission Date"].dt.to_period("W").dt.to_timestamp()
+        data["_week_end"] = data["Submission Date"].dt.to_period("W").dt.to_timestamp() + pd.Timedelta(days=6)
         data["_week_label"] = (
             data["_week_start"].dt.strftime("%b %d") + " – " + data["_week_end"].dt.strftime("%b %d, %Y")
         )
@@ -510,7 +510,7 @@ def main():
         st.markdown('<div class="section-header">Weekly Hours Saved Trend</div>', unsafe_allow_html=True)
         trend_df = fdf.copy()
         trend_df["Submission Date"] = pd.to_datetime(trend_df["Submission Date"], errors="coerce")
-        trend_df["WeekStart"] = trend_df["Submission Date"].dt.to_period("W").apply(lambda p: p.to_timestamp())
+        trend_df["WeekStart"] = trend_df["Submission Date"].dt.to_period("W").dt.to_timestamp()
         trend_df["WeekLabel"] = trend_df["WeekStart"].dt.strftime("W%W: %b %d")
         week_data = trend_df.groupby(["WeekStart", "WeekLabel"])["Hours Saved"].sum().reset_index()
         week_data = week_data.sort_values("WeekStart")
