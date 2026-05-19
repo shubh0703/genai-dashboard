@@ -324,7 +324,7 @@ def main():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Row 2: Hours by Project + Tool Adoption ───────────────────────────────
+    # ── Row 2: Hours by Project + Tool Adoption + AI Usage by Project ────────
     col_left, col_right = st.columns([3, 2])
 
     with col_left:
@@ -341,106 +341,213 @@ def main():
         fig_proj.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), categoryorder="total ascending")
         st.plotly_chart(fig_proj, use_container_width=True)
 
-    with col_right:                                                                                                                                                                                             
-          st.markdown('<div class="section-header">AI Tool Adoption</div>', unsafe_allow_html=True)                                                                                                               
-          # Explode semicolon-separated tools, count individually                                                                                                                                                 
-          tools_series = fdf["Tool"].dropna().str.split(";").explode().str.strip()                                                                                                                                
-          tool_data = tools_series.value_counts().reset_index()                                                                                                                                                   
-          tool_data.columns = ["Tool", "Count"]                                                                                                                                                                   
-          # Keep top 8 tools only                                                                                                                                                                                 
-          tool_data = tool_data.head(8)                                                                                                                                                                           
-          total_tool_count = tool_data["Count"].sum()                                                                                                                                                             
-          tool_data["Pct"] = (tool_data["Count"] / total_tool_count * 100).round(1)                                                                                                                               
-          tool_data["hover"] = tool_data.apply(                                                                                                                                                                   
-              lambda r: f"<b>{r['Tool']}</b><br>Users: {r['Count']}<br>Usage: {r['Pct']}%", axis=1                                                                                                                
-          )                                                                                                                                                                                                       
-          if not tool_data.empty:                                                                                                                                                                                 
-              fig_donut = px.pie(                                                                                                                                                                                 
-                  tool_data, names="Tool", values="Count",                                                                                                                                                        
-                  hole=0.5,                                                                                                                                                                                       
-                  color_discrete_sequence=CHART_COLORS,                                                                                                                                                           
-                  custom_data=["hover"]                                                                                                                                                                           
-              )                                                                                                                                                                                                   
-              fig_donut.update_layout(                                                                                                                                                                            
-                  paper_bgcolor="rgba(0,0,0,0)",                                                                                                                                                                  
-                  plot_bgcolor="#1A2B3C",                                                                                                                                                                         
-                  font=dict(color="#FFFFFF", family="Arial"),                                                                                                                                                     
-                  margin=dict(l=10, r=10, t=60, b=10),                                                                                                                                                            
-                  height=380,                                                                                                                                                                                     
-                  legend=dict(                                                                                                                                                                                    
-                      orientation="h",                                                                                                                                                                            
-                      yanchor="bottom", y=1.02,                                                                                                                                                                   
-                      xanchor="center", x=0.5,                                                                                                                                                                    
-                      font=dict(color="#FFFFFF", size=10),                                                                                                                                                        
-                      bgcolor="rgba(0,0,0,0)"                                                                                                                                                                     
-                  )                                                                                                                                                                                               
-              )                                                                                                                                                                                                   
-              fig_donut.update_traces(                                                                                                                                                                            
-                  textfont=dict(color="white", size=11),                                                                                                                                                          
-                  textposition="inside",                                                                                                                                                                          
-                  textinfo="percent",                                                                                                                                                                             
-                  hovertemplate="%{customdata[0]}<extra></extra>"                                                                                                                                                 
-              )                                                                                                                                                                                                   
-              st.plotly_chart(fig_donut, use_container_width=True)                                                                                                                                                
-          else:                                                                                                                                                                                                   
-              st.info("No tool data available.")               
+    with col_right:
+        st.markdown('<div class="section-header">AI Tool Adoption</div>', unsafe_allow_html=True)
+        # Explode semicolon-separated tools, count individually
+        tools_series = fdf["Tool"].dropna().str.split(";").explode().str.strip()
+        tool_data = tools_series.value_counts().reset_index()
+        tool_data.columns = ["Tool", "Count"]
+        # Keep top 8 tools only
+        tool_data = tool_data.head(8)
+        total_tool_count = tool_data["Count"].sum()
+        tool_data["Pct"] = (tool_data["Count"] / total_tool_count * 100).round(1)
+        tool_data["hover"] = tool_data.apply(
+            lambda r: f"<b>{r['Tool']}</b><br>Users: {r['Count']}<br>Usage: {r['Pct']}%", axis=1
+        )
+        if not tool_data.empty:
+            fig_donut = px.pie(
+                tool_data, names="Tool", values="Count",
+                hole=0.5,
+                color_discrete_sequence=CHART_COLORS,
+                custom_data=["hover"]
+            )
+            fig_donut.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="#1A2B3C",
+                font=dict(color="#FFFFFF", family="Arial"),
+                margin=dict(l=10, r=10, t=60, b=10),
+                height=380,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom", y=1.02,
+                    xanchor="center", x=0.5,
+                    font=dict(color="#FFFFFF", size=10),
+                    bgcolor="rgba(0,0,0,0)"
+                )
+            )
+            fig_donut.update_traces(
+                textfont=dict(color="white", size=11),
+                textposition="inside",
+                textinfo="percent",
+                hovertemplate="%{customdata[0]}<extra></extra>"
+            )
+            st.plotly_chart(fig_donut, use_container_width=True)
+        else:
+            st.info("No tool data available.")
+
+    # ── AI Usage by Project ───────────────────────────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="section-header">AI Usage by Project</div>', unsafe_allow_html=True)
+
+    def freq_to_score(freq):
+        if pd.isna(freq): return 0
+        f = str(freq).lower().strip()
+        if "multiple" in f or "3-4 times" in f: return 125
+        elif "every day" in f or "daily" in f or "at least once" in f: return 100
+        elif "3-4 days" in f or "3–4 days" in f: return 75
+        elif "1-2 days" in f or "1–2 days" in f: return 40
+        else: return 0
+
+    usage_proj = fdf.copy()
+    usage_proj["Usage Score"] = usage_proj["Frequency"].apply(freq_to_score)
+    usage_proj_data = usage_proj.groupby("Project")["Usage Score"].mean().reset_index()
+    usage_proj_data.columns = ["Project", "Avg AI Usage %"]
+    usage_proj_data["Avg AI Usage %"] = usage_proj_data["Avg AI Usage %"].round(1)
+    usage_proj_data["Usage Label"] = usage_proj_data["Avg AI Usage %"].apply(
+        lambda x: f"{x:.0f}%" if x < 125 else f">100%"
+    )
+    usage_proj_data = usage_proj_data.sort_values("Avg AI Usage %", ascending=True)
+
+    fig_usage = px.bar(
+        usage_proj_data, x="Avg AI Usage %", y="Project",
+        orientation="h",
+        color="Project",
+        color_discrete_sequence=CHART_COLORS,
+        text="Usage Label"
+    )
+    fig_usage.update_layout(**PLOTLY_LAYOUT, height=380, showlegend=False)
+    fig_usage.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Avg AI Usage %", range=[0, 140])
+    fig_usage.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), automargin=True)
+    fig_usage.update_traces(
+        textposition="outside",
+        textfont=dict(color="white", size=11),
+        hovertemplate="<b>%{y}</b><br>Avg AI Usage: %{x:.0f}%<extra></extra>"
+    )
+    st.plotly_chart(fig_usage, use_container_width=True)
 
     # ── Row 3: Activities + Frequency + Trend + Blockers ─────────────────────
     col1, col2, col3 = st.columns([2, 2, 2])
 
     with col1:
         st.markdown('<div class="section-header">Top Activities / Use Cases</div>', unsafe_allow_html=True)
-        act_data = fdf["Activity"].value_counts().head(12).reset_index()
+        # Explode semicolon-separated activities into discrete values
+        act_series = fdf["Activity"].dropna().str.split(";").explode().str.strip()
+        act_data = act_series.value_counts().head(12).reset_index()
         act_data.columns = ["Activity", "Count"]
         act_data = act_data.sort_values("Count", ascending=True)
         fig_act = px.bar(act_data, x="Count", y="Activity", orientation="h",
                         color_discrete_sequence=[CHART_COLORS[0]])
-        fig_act.update_layout(**PLOTLY_LAYOUT, height=420, showlegend=False)
-        fig_act.update_xaxes(color="#8899AA", gridcolor="#2A3B4C")
-        fig_act.update_yaxes(color="#FFFFFF", tickfont=dict(size=10))
+        fig_act.update_layout(**PLOTLY_LAYOUT, height=500, showlegend=False)
+        fig_act.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Count")
+        fig_act.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), automargin=True)
+        fig_act.update_traces(hovertemplate="<b>%{y}</b><br>Count: %{x}<extra></extra>")
         st.plotly_chart(fig_act, use_container_width=True)
 
     with col2:
         st.markdown('<div class="section-header">Usage Frequency Breakdown</div>', unsafe_allow_html=True)
+        # Custom sort order for frequency
+        freq_order = ["Multiple times per day", "Every day (at least once)", "3-4 days per week", "1-2 days per week"]
         freq_data = fdf["Frequency"].value_counts().reset_index()
         freq_data.columns = ["Frequency", "Count"]
-        freq_data = freq_data.sort_values("Count", ascending=True)
+        freq_data["sort_key"] = freq_data["Frequency"].apply(
+            lambda x: freq_order.index(x) if x in freq_order else 99
+        )
+        freq_data = freq_data.sort_values("sort_key", ascending=False).drop(columns="sort_key")
         fig_freq = px.bar(freq_data, x="Count", y="Frequency", orientation="h",
-                         color_discrete_sequence=[CHART_COLORS[1]])
-        fig_freq.update_layout(**PLOTLY_LAYOUT, height=180, showlegend=False)
-        fig_freq.update_xaxes(color="#8899AA", gridcolor="#2A3B4C")
-        fig_freq.update_yaxes(color="#FFFFFF", tickfont=dict(size=11))
+                         color_discrete_sequence=[CHART_COLORS[0]])
+        fig_freq.update_layout(**PLOTLY_LAYOUT, height=220, showlegend=False)
+        fig_freq.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Count")
+        fig_freq.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), title="Frequency", automargin=True)
+        fig_freq.update_traces(hovertemplate="<b>%{y}</b><br>Count: %{x}<extra></extra>")
         st.plotly_chart(fig_freq, use_container_width=True)
 
         st.markdown('<div class="section-header">Avg Satisfaction by Project</div>', unsafe_allow_html=True)
         sat_proj = fdf.groupby("Project")["Satisfaction"].mean().reset_index().sort_values("Satisfaction", ascending=True)
         sat_proj["Satisfaction"] = sat_proj["Satisfaction"].round(1)
         fig_sat = px.bar(sat_proj, x="Satisfaction", y="Project", orientation="h",
-                        color_discrete_sequence=[CHART_COLORS[2]],
+                        color_discrete_sequence=[CHART_COLORS[0]],
                         text="Satisfaction")
-        fig_sat.update_layout(**PLOTLY_LAYOUT, height=220, showlegend=False)
+        fig_sat.update_layout(**PLOTLY_LAYOUT, height=300, showlegend=False)
         fig_sat.update_traces(textposition="outside", textfont=dict(color="white", size=10))
-        fig_sat.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", range=[0, 11])
-        fig_sat.update_yaxes(color="#FFFFFF", tickfont=dict(size=10))
+        fig_sat.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", range=[0, 11], title="Satisfaction")
+        fig_sat.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), title="Project", automargin=True)
         st.plotly_chart(fig_sat, use_container_width=True)
 
     with col3:
         st.markdown('<div class="section-header">Weekly Hours Saved Trend</div>', unsafe_allow_html=True)
-        week_data = fdf.groupby("Week")["Hours Saved"].sum().reset_index().sort_values("Week")
-        fig_trend = px.bar(week_data, x="Week", y="Hours Saved",
+        # Group by ISO week (not daily) for clean weekly bars
+        trend_df = fdf.copy()
+        trend_df["Submission Date"] = pd.to_datetime(trend_df["Submission Date"], errors="coerce")
+        trend_df["WeekStart"] = trend_df["Submission Date"].dt.to_period("W").apply(lambda p: p.start_time)
+        trend_df["WeekLabel"] = trend_df["WeekStart"].dt.strftime("W%W: %b %d")
+        week_data = trend_df.groupby(["WeekStart", "WeekLabel"])["Hours Saved"].sum().reset_index()
+        week_data = week_data.sort_values("WeekStart")
+        fig_trend = px.bar(week_data, x="WeekLabel", y="Hours Saved",
                           color_discrete_sequence=[CHART_COLORS[0]])
-        fig_trend.update_layout(**PLOTLY_LAYOUT, height=200, showlegend=False)
-        fig_trend.update_xaxes(color="#8899AA", tickfont=dict(size=10))
-        fig_trend.update_yaxes(color="#8899AA", gridcolor="#2A3B4C")
+        fig_trend.update_layout(**PLOTLY_LAYOUT, height=250, showlegend=False)
+        fig_trend.update_xaxes(color="#8899AA", tickfont=dict(size=10), title="Week")
+        fig_trend.update_yaxes(color="#8899AA", gridcolor="#2A3B4C", title="Hours Saved")
+        fig_trend.update_traces(hovertemplate="<b>%{x}</b><br>Hours Saved: %{y}<extra></extra>")
         st.plotly_chart(fig_trend, use_container_width=True)
 
         st.markdown('<div class="section-header">Top Reported Blockers</div>', unsafe_allow_html=True)
-        blocker_data = fdf["Blocker"].value_counts().head(6).reset_index()
+
+        # Keyword-based categorization mapping free text → standard category
+        BLOCKER_CATEGORIES = {
+            "Hallucinations / incorrect output": [
+                "hallucin", "incorrect", "wrong", "inaccurate", "not correct",
+                "not giving what", "not what we expect", "false", "fabricat"
+            ],
+            "API & context window limits": [
+                "api limit", "context window", "token limit", "rate limit",
+                "context limit", "window limit", "api limits"
+            ],
+            "Rapidly changing tools (learning curve)": [
+                "changing tool", "learning curve", "change every", "new tool",
+                "keep changing", "rapidly changing", "switching tool"
+            ],
+            "Trust overhead — manual review needed": [
+                "manual review", "trust", "can't blindly", "cannot blindly",
+                "review needed", "verify", "validate", "oversight"
+            ],
+            "Few use cases in legacy projects": [
+                "legacy", "old code", "old project", "limited use case",
+                "few use case", "no use case"
+            ],
+            "Tool suggestion quality inconsistency": [
+                "inconsistent", "quality", "suggestion quality", "not consistent",
+                "vary", "unpredictable"
+            ],
+            "Slow response / performance issues": [
+                "slow", "too much time", "taking time", "latency", "timeout",
+                "performance", "respond slow", "response time"
+            ],
+            "No blockers": [
+                "no blocker", "none", "nothing", "no issue", "n/a", "na",
+                "not any", "i don't see any", "no challenges"
+            ],
+        }
+
+        def categorize_blocker(text):
+            if pd.isna(text):
+                return None
+            text_lower = str(text).lower().strip()
+            for category, keywords in BLOCKER_CATEGORIES.items():
+                if any(kw in text_lower for kw in keywords):
+                    return category
+            return "Other"
+
+        blocker_series = fdf["Blocker"].dropna().str.strip()
+        categorized = blocker_series.apply(categorize_blocker)
+        # Exclude "No blockers" and "Other" from display
+        categorized = categorized[~categorized.isin(["No blockers", None])]
+        blocker_data = categorized.value_counts().head(6).reset_index()
         blocker_data.columns = ["Blocker", "Count"]
+
         for _, row in blocker_data.iterrows():
-            b1, b2 = st.columns([4, 1])
-            b1.markdown(f"<p style='color:#FFFFFF;font-size:12px;margin:2px 0;'>• {row['Blocker']}</p>", unsafe_allow_html=True)
-            b2.markdown(f"<p style='color:#00C2C7;font-size:12px;font-weight:700;margin:2px 0;text-align:right;'>{row['Count']}</p>", unsafe_allow_html=True)
+            b1, b2 = st.columns([5, 1])
+            b1.markdown(f"<p style='color:#FFFFFF;font-size:12px;margin:4px 0;line-height:1.4;'>• {row['Blocker']}</p>", unsafe_allow_html=True)
+            b2.markdown(f"<p style='color:#00C2C7;font-size:13px;font-weight:700;margin:4px 0;text-align:right;'>{row['Count']}</p>", unsafe_allow_html=True)
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -448,19 +555,54 @@ def main():
     lb1, lb2 = st.columns([4, 1])
     lb1.markdown('<div class="section-header">Employee Leaderboard — Hours Saved</div>', unsafe_allow_html=True)
 
-    leaderboard = fdf.groupby(["Employee", "Project", "Tool"]).agg(
+    # AI Usage % mapping from frequency
+    def freq_to_usage(freq):
+        if pd.isna(freq):
+            return "0%"
+        f = str(freq).lower().strip()
+        if "multiple" in f or "3-4 times" in f or "3-4 time" in f:
+            return ">100%"
+        elif "every day" in f or "daily" in f or "at least once" in f:
+            return "100%"
+        elif "3-4 days" in f or "3–4 days" in f:
+            return "75%"
+        elif "1-2 days" in f or "1–2 days" in f:
+            return "<50%"
+        else:
+            return "0%"
+
+    # Get most frequent tool and frequency per employee
+    tool_mode = fdf.groupby("Employee")["Tool"].agg(
+        lambda x: x.dropna().str.split(";").explode().str.strip().value_counts().idxmax()
+        if not x.dropna().empty else "N/A"
+    )
+    freq_mode = fdf.groupby("Employee")["Frequency"].agg(
+        lambda x: x.value_counts().idxmax() if not x.dropna().empty else None
+    )
+
+    leaderboard = fdf.groupby("Employee").agg(
+        Project=("Project", lambda x: x.value_counts().idxmax()),
         Hours_Saved=("Hours Saved", "sum"),
         Entries=("Email", "count"),
         Avg_Satisfaction=("Satisfaction", "mean"),
         Avg_Confidence=("Confidence", "mean")
-    ).reset_index().sort_values("Hours_Saved", ascending=False).reset_index(drop=True)
+    ).reset_index()
 
+    leaderboard["Primary Tool"] = leaderboard["Employee"].map(tool_mode)
+    leaderboard["Frequency"] = leaderboard["Employee"].map(freq_mode)
+    leaderboard["AI Usage %"] = leaderboard["Frequency"].apply(freq_to_usage)
+    leaderboard = leaderboard.sort_values("Hours_Saved", ascending=False).reset_index(drop=True)
     leaderboard.index += 1
+
     leaderboard["Hours_Saved"] = leaderboard["Hours_Saved"].apply(lambda x: f"{x:.0f}h")
     leaderboard["Avg_Satisfaction"] = leaderboard["Avg_Satisfaction"].apply(lambda x: f"{x:.1f}")
     leaderboard["Avg_Confidence"] = leaderboard["Avg_Confidence"].apply(lambda x: f"{x:.1f} / 5")
-    leaderboard.columns = ["#", "Employee", "Project", "Primary Tool", "Hours Saved", "Entries", "Avg Satisfaction", "Avg Confidence"]
-    leaderboard = leaderboard.set_index("#")
+
+    leaderboard = leaderboard[["Employee", "Project", "Hours_Saved", "Entries",
+                                "Avg_Satisfaction", "Avg_Confidence", "Primary Tool", "AI Usage %"]]
+    leaderboard.columns = ["Employee", "Project", "Hours Saved", "Entries",
+                           "Avg Satisfaction", "Avg Confidence", "Primary Tool", "AI Usage %"]
+    leaderboard.index.name = "#"
 
     with lb2:
         csv = fdf.to_csv(index=False).encode("utf-8")
