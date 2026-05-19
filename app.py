@@ -207,7 +207,7 @@ def load_data():
     df["Hours Saved"] = pd.to_numeric(df["Hours Saved"], errors="coerce").fillna(0)
     df["Satisfaction"] = pd.to_numeric(df["Satisfaction"], errors="coerce")
     df["Confidence"] = pd.to_numeric(df["Confidence"], errors="coerce")
-    df["Submission Date"] = pd.to_datetime(df["Submission Date"], errors="coerce")
+    df["Submission Date"] = pd.to_datetime(df["Submission Date"], errors="coerce", format="mixed")
 
     # Extract employee display name from email
     df["Employee"] = df["Email"].str.split("@").str[0].str.replace(".", " ").str.title()
@@ -273,7 +273,7 @@ def main():
     # Build week range labels: "Apr 28 – May 04" style sorted chronologically
     def build_week_options(data):
         data = data.copy()
-        data["Submission Date"] = pd.to_datetime(data["Submission Date"], errors="coerce")
+        data["Submission Date"] = pd.to_datetime(data["Submission Date"], errors="coerce", format="mixed")
         data["_week_start"] = data["Submission Date"].dt.to_period("W").dt.to_timestamp()
         data["_week_end"] = data["Submission Date"].dt.to_period("W").dt.to_timestamp() + pd.Timedelta(days=6)
         data["_week_label"] = (
@@ -306,7 +306,7 @@ def main():
 
     # Apply filters
     fdf = df.copy()
-    fdf["Submission Date"] = pd.to_datetime(fdf["Submission Date"], errors="coerce")
+    fdf["Submission Date"] = pd.to_datetime(fdf["Submission Date"], errors="coerce", format="mixed")
     if f_week != "All weeks":
         week_start = week_start_map[f_week]
         week_end = week_start + pd.Timedelta(days=6)
@@ -361,7 +361,7 @@ def main():
         fig_proj.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Hours Saved")
         fig_proj.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), categoryorder="total ascending", automargin=True)
         fig_proj.update_traces(hovertemplate="<b>%{y}</b><br>Hours Saved: %{x}<extra></extra>")
-        st.plotly_chart(fig_proj, use_container_width=True)
+        st.plotly_chart(fig_proj, width="stretch")
 
     with col_mid:
         st.markdown('<div class="section-header">AI Usage by Project</div>', unsafe_allow_html=True)
@@ -400,7 +400,7 @@ def main():
             textfont=dict(color="white", size=11),
             hovertemplate="<b>%{y}</b><br>Avg AI Usage: %{x:.0f}%<extra></extra>"
         )
-        st.plotly_chart(fig_usage, use_container_width=True)
+        st.plotly_chart(fig_usage, width="stretch")
 
     with col_right:
         st.markdown('<div class="section-header">AI Tool Adoption</div>', unsafe_allow_html=True)
@@ -439,7 +439,7 @@ def main():
                 textinfo="percent",
                 hovertemplate="%{customdata[0]}<extra></extra>"
             )
-            st.plotly_chart(fig_donut, use_container_width=True)
+            st.plotly_chart(fig_donut, width="stretch")
         else:
             st.info("No tool data available.")
 
@@ -467,7 +467,7 @@ def main():
             marker_line_width=0,
             hovertemplate="<b>%{y}</b><br>Count: %{x}<extra></extra>"
         )
-        st.plotly_chart(fig_act, use_container_width=True)
+        st.plotly_chart(fig_act, width="stretch")
 
     with col2:
         st.markdown('<div class="section-header">Usage Frequency Breakdown</div>', unsafe_allow_html=True)
@@ -486,7 +486,7 @@ def main():
         fig_freq.update_yaxes(**TICK_STYLE, title=dict(text="", font=TITLE_FONT))
         fig_freq.update_traces(marker_line_width=0,
                                hovertemplate="<b>%{y}</b><br>Count: %{x}<extra></extra>")
-        st.plotly_chart(fig_freq, use_container_width=True)
+        st.plotly_chart(fig_freq, width="stretch")
 
         st.markdown('<div class="section-header">Avg Satisfaction by Project</div>', unsafe_allow_html=True)
         sat_proj = fdf.groupby("Project")["Satisfaction"].mean().reset_index().sort_values("Satisfaction", ascending=True)
@@ -504,12 +504,12 @@ def main():
         fig_sat.update_xaxes(**AXIS_STYLE, range=[0, 12],
                              title=dict(text="Avg Score", font=TITLE_FONT))
         fig_sat.update_yaxes(**TICK_STYLE, title=dict(text="", font=TITLE_FONT))
-        st.plotly_chart(fig_sat, use_container_width=True)
+        st.plotly_chart(fig_sat, width="stretch")
 
     with col3:
         st.markdown('<div class="section-header">Weekly Hours Saved Trend</div>', unsafe_allow_html=True)
         trend_df = fdf.copy()
-        trend_df["Submission Date"] = pd.to_datetime(trend_df["Submission Date"], errors="coerce")
+        trend_df["Submission Date"] = pd.to_datetime(trend_df["Submission Date"], errors="coerce", format="mixed")
         trend_df["WeekStart"] = trend_df["Submission Date"].dt.to_period("W").dt.to_timestamp()
         trend_df["WeekLabel"] = trend_df["WeekStart"].dt.strftime("W%W: %b %d")
         week_data = trend_df.groupby(["WeekStart", "WeekLabel"])["Hours Saved"].sum().reset_index()
@@ -523,7 +523,7 @@ def main():
         fig_trend.update_yaxes(**AXIS_STYLE, title=dict(text="Hours Saved", font=TITLE_FONT))
         fig_trend.update_traces(marker_line_width=0,
                                 hovertemplate="<b>%{x}</b><br>Hours Saved: %{y}<extra></extra>")
-        st.plotly_chart(fig_trend, use_container_width=True)
+        st.plotly_chart(fig_trend, width="stretch")
 
         st.markdown('<div class="section-header">Top Reported Blockers</div>', unsafe_allow_html=True)
 
@@ -644,7 +644,7 @@ def main():
 
     st.dataframe(
         leaderboard,
-        use_container_width=True,
+        width="stretch",
         height=400
     )
 
