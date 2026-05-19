@@ -179,6 +179,33 @@ PLOTLY_LAYOUT = dict(
     )
 )
 
+# ─── Flexible date parser ────────────────────────────────────────────────────
+def _parse_dates(series):
+    formats = [
+        "%m/%d/%Y %H:%M:%S",   # 5/19/2026 15:53:00
+        "%m/%d/%y %H:%M:%S",   # 05/19/26 11:06:11
+        "%m/%d/%Y %H:%M",      # 5/19/2026 15:53
+        "%m/%d/%y %H:%M",      # 05/19/26 11:06
+        "%m/%d/%Y",            # 5/19/2026
+        "%m/%d/%y",            # 05/19/26
+        "%Y-%m-%d %H:%M:%S",   # 2026-05-19 15:53:00
+        "%Y-%m-%dT%H:%M:%S",   # ISO format
+        "%d/%m/%Y %H:%M:%S",   # European style
+    ]
+    result = pd.Series([pd.NaT] * len(series), index=series.index)
+    remaining = series.copy()
+    for fmt in formats:
+        mask = result.isna() & remaining.notna()
+        if not mask.any():
+            break
+        parsed = pd.to_datetime(remaining[mask], format=fmt, errors="coerce")
+        result[mask] = parsed
+    # Final fallback for anything still unparsed
+    still_null = result.isna() & remaining.notna()
+    if still_null.any():
+        result[still_null] = pd.to_datetime(remaining[still_null], errors="coerce", format="mixed")
+    return result
+
 # ─── Data Loading ─────────────────────────────────────────────────────────────
 @st.cache_data(ttl=1800)  # 30-minute cache
 def load_data():
@@ -207,7 +234,7 @@ def load_data():
     df["Hours Saved"] = pd.to_numeric(df["Hours Saved"], errors="coerce").fillna(0)
     df["Satisfaction"] = pd.to_numeric(df["Satisfaction"], errors="coerce")
     df["Confidence"] = pd.to_numeric(df["Confidence"], errors="coerce")
-    df["Submission Date"] = pd.to_datetime(df["Submission Date"], errors="coerce", format="mixed")
+    df["Submission Date"] = _parse_dates(df["Submission Date"])
 
     # Extract employee display name from email
     df["Employee"] = df["Email"].str.split("@").str[0].str.replace(".", " ").str.title()
@@ -273,7 +300,7 @@ def main():
     # Build week range labels: "Apr 28 – May 04" style sorted chronologically
     def build_week_options(data):
         data = data.copy()
-        data["Submission Date"] = pd.to_datetime(data["Submission Date"], errors="coerce", format="mixed")
+        data["Submission Date"] = _parse_dates(data["Submission Date"])
         data["_week_start"] = data["Submission Date"].dt.to_period("W").dt.to_timestamp()
         data["_week_end"] = data["Submission Date"].dt.to_period("W").dt.to_timestamp() + pd.Timedelta(days=6)
         data["_week_label"] = (
@@ -306,7 +333,7 @@ def main():
 
     # Apply filters
     fdf = df.copy()
-    fdf["Submission Date"] = pd.to_datetime(fdf["Submission Date"], errors="coerce", format="mixed")
+    fdf["Submission Date"] = _parse_dates(fdf["Submission Date"])
     if f_week != "All weeks":
         week_start = week_start_map[f_week]
         week_end = week_start + pd.Timedelta(days=6)
@@ -509,7 +536,7 @@ def main():
     with col3:
         st.markdown('<div class="section-header">Weekly Hours Saved Trend</div>', unsafe_allow_html=True)
         trend_df = fdf.copy()
-        trend_df["Submission Date"] = pd.to_datetime(trend_df["Submission Date"], errors="coerce", format="mixed")
+        trend_df["Submission Date"] = _parse_dates(trend_df["Submission Date"])
         trend_df["WeekStart"] = trend_df["Submission Date"].dt.to_period("W").dt.to_timestamp()
         trend_df["WeekLabel"] = trend_df["WeekStart"].dt.strftime("W%W: %b %d")
         week_data = trend_df.groupby(["WeekStart", "WeekLabel"])["Hours Saved"].sum().reset_index()
