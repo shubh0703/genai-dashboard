@@ -591,8 +591,7 @@ def main():
     st.markdown("<hr>", unsafe_allow_html=True)
 
     # ── Employee Leaderboard ──────────────────────────────────────────────────
-    lb1, lb2 = st.columns([4, 1])
-    lb1.markdown('<div class="section-header">Employee Leaderboard — Hours Saved</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Employee Leaderboard — Hours Saved</div>', unsafe_allow_html=True)
 
     # AI Usage % mapping from frequency
     def freq_to_usage(freq):
@@ -642,15 +641,6 @@ def main():
     leaderboard.columns = ["Employee", "Project", "Hours Saved", "Entries",
                            "Avg Satisfaction", "Avg Confidence", "Primary Tool", "AI Usage %"]
     leaderboard.index.name = "#"
-
-    with lb2:
-        csv = fdf.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="Export CSV",
-            data=csv,
-            file_name=f"genai_dashboard_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv"
-        )
 
     st.dataframe(
         leaderboard,
