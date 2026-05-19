@@ -28,29 +28,49 @@ st.markdown("""
     .kpi-card {
         background-color: #1A2B3C;
         border: 1px solid #2A3B4C;
+        border-top: 2px solid #00C2C7;
         border-radius: 8px;
-        padding: 16px 20px;
+        padding: 14px 18px 12px 18px;
         text-align: left;
         height: 110px;
         overflow: hidden;
+        font-family: Arial, sans-serif;
     }
     .kpi-label {
         font-size: 10px;
-        color: #8899AA;
-        letter-spacing: 1px;
+        font-family: Arial, sans-serif;
+        font-weight: 600;
+        color: #7A9BB5;
+        letter-spacing: 1.2px;
         text-transform: uppercase;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
     .kpi-value {
-        font-size: 32px;
+        font-size: 28px;
         font-weight: 700;
+        font-family: Arial, sans-serif;
         color: #00C2C7;
-        line-height: 1.1;
+        line-height: 1.15;
+    }
+    .kpi-value-white {
+        font-size: 22px;
+        font-weight: 700;
+        font-family: Arial, sans-serif;
+        color: #FFFFFF;
+        line-height: 1.15;
     }
     .kpi-sub {
         font-size: 11px;
-        color: #8899AA;
-        margin-top: 4px;
+        font-family: Arial, sans-serif;
+        color: #7A9BB5;
+        margin-top: 5px;
+    }
+    .kpi-sub-teal {
+        font-size: 11px;
+        font-family: Arial, sans-serif;
+        color: #00C2C7;
+        margin-top: 5px;
+        font-weight: 600;
     }
 
     /* Section headers */
@@ -210,12 +230,14 @@ def horizontal_bar(data, x_col, y_col, title, color=None):
     return fig
 
 # ─── KPI Card HTML ────────────────────────────────────────────────────────────
-def kpi_card(label, value, sub=""):
+def kpi_card(label, value, sub="", value_white=False, sub_teal=False):
+    value_class = "kpi-value-white" if value_white else "kpi-value"
+    sub_class = "kpi-sub-teal" if sub_teal else "kpi-sub"
     return f"""
     <div class="kpi-card">
         <div class="kpi-label">{label}</div>
-        <div class="kpi-value">{value}</div>
-        <div class="kpi-sub">{sub}</div>
+        <div class="{value_class}">{value}</div>
+        <div class="{sub_class}">{sub}</div>
     </div>
     """
 
@@ -315,12 +337,12 @@ def main():
     top_tool_pct = tools_exploded.value_counts(normalize=True).max() * 100 if not tools_exploded.empty else 0
 
     k1, k2, k3, k4, k5, k6 = st.columns(6)
-    k1.markdown(kpi_card("Total Hours Saved", f"{total_hours:.0f}h", f"{total_responses} tracked tasks"), unsafe_allow_html=True)
-    k2.markdown(kpi_card("Avg Satisfaction Score", f"{avg_satisfaction:.1f} / 10", f"{(fdf['Satisfaction'] >= 8).sum()} rated ≥8"), unsafe_allow_html=True)
-    k3.markdown(kpi_card("Active Contributors", f"{active_contributors}", f"across {fdf['Project'].nunique()} projects"), unsafe_allow_html=True)
-    k4.markdown(kpi_card("Avg Hours Saved / Entry", f"{avg_hours_per_entry:.1f}h", f"max: {fdf['Hours Saved'].max():.0f}h saved in one task"), unsafe_allow_html=True)
-    k5.markdown(kpi_card("Avg Confidence Level", f"{avg_confidence:.1f} / 5", "out of 5"), unsafe_allow_html=True)
-    k6.markdown(kpi_card("Top AI Tool", top_tool, f"{top_tool_pct:.0f}% of submissions"), unsafe_allow_html=True)
+    k1.markdown(kpi_card("Total Hours Saved",      f"{total_hours:.0f}h",         f"{total_responses} tracked tasks"), unsafe_allow_html=True)
+    k2.markdown(kpi_card("Avg Satisfaction Score", f"{avg_satisfaction:.1f} / 10", f"out of 10  ·  {(fdf['Satisfaction'] >= 8).sum()} rated ≥8"), unsafe_allow_html=True)
+    k3.markdown(kpi_card("Active Contributors",    f"{active_contributors}",       f"across {fdf['Project'].nunique()} projects"), unsafe_allow_html=True)
+    k4.markdown(kpi_card("Avg Hours Saved / Entry",f"{avg_hours_per_entry:.1f}h",  f"max: {fdf['Hours Saved'].max():.0f}h saved in one task"), unsafe_allow_html=True)
+    k5.markdown(kpi_card("Avg Confidence Level",   f"{avg_confidence:.1f} / 5",    "out of 5"), unsafe_allow_html=True)
+    k6.markdown(kpi_card("Top AI Tool",            top_tool,                        f"{top_tool_pct:.0f}% of submissions", value_white=True, sub_teal=True), unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -424,24 +446,31 @@ def main():
     # ── Row 3: Activities + Frequency + Trend + Blockers ─────────────────────
     col1, col2, col3 = st.columns([2, 2, 2])
 
+    AXIS_STYLE = dict(color="#8899AA", gridcolor="#2A3B4C", tickfont=dict(size=12, family="Arial"))
+    TICK_STYLE = dict(color="#FFFFFF", tickfont=dict(size=12, family="Arial"), automargin=True)
+    TITLE_FONT = dict(size=12, color="#8899AA", family="Arial")
+    BAR_COLOR  = CHART_COLORS[0]   # consistent teal across all bar charts
+
     with col1:
         st.markdown('<div class="section-header">Top Activities / Use Cases</div>', unsafe_allow_html=True)
-        # Explode semicolon-separated activities into discrete values
         act_series = fdf["Activity"].dropna().str.split(";").explode().str.strip()
         act_data = act_series.value_counts().head(12).reset_index()
         act_data.columns = ["Activity", "Count"]
         act_data = act_data.sort_values("Count", ascending=True)
         fig_act = px.bar(act_data, x="Count", y="Activity", orientation="h",
-                        color_discrete_sequence=[CHART_COLORS[0]])
-        fig_act.update_layout(**PLOTLY_LAYOUT, height=500, showlegend=False)
-        fig_act.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Count")
-        fig_act.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), automargin=True)
-        fig_act.update_traces(hovertemplate="<b>%{y}</b><br>Count: %{x}<extra></extra>")
+                         color_discrete_sequence=[BAR_COLOR])
+        fig_act.update_layout(**PLOTLY_LAYOUT, height=520, showlegend=False,
+                              margin=dict(l=10, r=30, t=10, b=40))
+        fig_act.update_xaxes(**AXIS_STYLE, title=dict(text="Count", font=TITLE_FONT))
+        fig_act.update_yaxes(**TICK_STYLE, title=dict(text="Activity", font=TITLE_FONT))
+        fig_act.update_traces(
+            marker_line_width=0,
+            hovertemplate="<b>%{y}</b><br>Count: %{x}<extra></extra>"
+        )
         st.plotly_chart(fig_act, use_container_width=True)
 
     with col2:
         st.markdown('<div class="section-header">Usage Frequency Breakdown</div>', unsafe_allow_html=True)
-        # Custom sort order for frequency
         freq_order = ["Multiple times per day", "Every day (at least once)", "3-4 days per week", "1-2 days per week"]
         freq_data = fdf["Frequency"].value_counts().reset_index()
         freq_data.columns = ["Frequency", "Count"]
@@ -450,28 +479,35 @@ def main():
         )
         freq_data = freq_data.sort_values("sort_key", ascending=False).drop(columns="sort_key")
         fig_freq = px.bar(freq_data, x="Count", y="Frequency", orientation="h",
-                         color_discrete_sequence=[CHART_COLORS[0]])
-        fig_freq.update_layout(**PLOTLY_LAYOUT, height=220, showlegend=False)
-        fig_freq.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", title="Count")
-        fig_freq.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), title="Frequency", automargin=True)
-        fig_freq.update_traces(hovertemplate="<b>%{y}</b><br>Count: %{x}<extra></extra>")
+                          color_discrete_sequence=[BAR_COLOR])
+        fig_freq.update_layout(**PLOTLY_LAYOUT, height=210, showlegend=False,
+                               margin=dict(l=10, r=30, t=10, b=40))
+        fig_freq.update_xaxes(**AXIS_STYLE, title=dict(text="Count", font=TITLE_FONT))
+        fig_freq.update_yaxes(**TICK_STYLE, title=dict(text="", font=TITLE_FONT))
+        fig_freq.update_traces(marker_line_width=0,
+                               hovertemplate="<b>%{y}</b><br>Count: %{x}<extra></extra>")
         st.plotly_chart(fig_freq, use_container_width=True)
 
         st.markdown('<div class="section-header">Avg Satisfaction by Project</div>', unsafe_allow_html=True)
         sat_proj = fdf.groupby("Project")["Satisfaction"].mean().reset_index().sort_values("Satisfaction", ascending=True)
         sat_proj["Satisfaction"] = sat_proj["Satisfaction"].round(1)
         fig_sat = px.bar(sat_proj, x="Satisfaction", y="Project", orientation="h",
-                        color_discrete_sequence=[CHART_COLORS[0]],
-                        text="Satisfaction")
-        fig_sat.update_layout(**PLOTLY_LAYOUT, height=300, showlegend=False)
-        fig_sat.update_traces(textposition="outside", textfont=dict(color="white", size=10))
-        fig_sat.update_xaxes(color="#8899AA", gridcolor="#2A3B4C", range=[0, 11], title="Satisfaction")
-        fig_sat.update_yaxes(color="#FFFFFF", tickfont=dict(size=11), title="Project", automargin=True)
+                         color_discrete_sequence=[BAR_COLOR], text="Satisfaction")
+        fig_sat.update_layout(**PLOTLY_LAYOUT, height=310, showlegend=False,
+                              margin=dict(l=10, r=50, t=10, b=40))
+        fig_sat.update_traces(
+            textposition="outside",
+            textfont=dict(color="#FFFFFF", size=11, family="Arial"),
+            marker_line_width=0,
+            hovertemplate="<b>%{y}</b><br>Avg Satisfaction: %{x}<extra></extra>"
+        )
+        fig_sat.update_xaxes(**AXIS_STYLE, range=[0, 12],
+                             title=dict(text="Avg Score", font=TITLE_FONT))
+        fig_sat.update_yaxes(**TICK_STYLE, title=dict(text="", font=TITLE_FONT))
         st.plotly_chart(fig_sat, use_container_width=True)
 
     with col3:
         st.markdown('<div class="section-header">Weekly Hours Saved Trend</div>', unsafe_allow_html=True)
-        # Group by ISO week (not daily) for clean weekly bars
         trend_df = fdf.copy()
         trend_df["Submission Date"] = pd.to_datetime(trend_df["Submission Date"], errors="coerce")
         trend_df["WeekStart"] = trend_df["Submission Date"].dt.to_period("W").apply(lambda p: p.start_time)
@@ -479,16 +515,18 @@ def main():
         week_data = trend_df.groupby(["WeekStart", "WeekLabel"])["Hours Saved"].sum().reset_index()
         week_data = week_data.sort_values("WeekStart")
         fig_trend = px.bar(week_data, x="WeekLabel", y="Hours Saved",
-                          color_discrete_sequence=[CHART_COLORS[0]])
-        fig_trend.update_layout(**PLOTLY_LAYOUT, height=250, showlegend=False)
-        fig_trend.update_xaxes(color="#8899AA", tickfont=dict(size=10), title="Week")
-        fig_trend.update_yaxes(color="#8899AA", gridcolor="#2A3B4C", title="Hours Saved")
-        fig_trend.update_traces(hovertemplate="<b>%{x}</b><br>Hours Saved: %{y}<extra></extra>")
+                           color_discrete_sequence=[BAR_COLOR])
+        fig_trend.update_layout(**PLOTLY_LAYOUT, height=250, showlegend=False,
+                                margin=dict(l=10, r=10, t=10, b=50))
+        fig_trend.update_xaxes(**AXIS_STYLE, title=dict(text="Week", font=TITLE_FONT),
+                               tickangle=-30)
+        fig_trend.update_yaxes(**AXIS_STYLE, title=dict(text="Hours Saved", font=TITLE_FONT))
+        fig_trend.update_traces(marker_line_width=0,
+                                hovertemplate="<b>%{x}</b><br>Hours Saved: %{y}<extra></extra>")
         st.plotly_chart(fig_trend, use_container_width=True)
 
         st.markdown('<div class="section-header">Top Reported Blockers</div>', unsafe_allow_html=True)
 
-        # Keyword-based categorization mapping free text → standard category
         BLOCKER_CATEGORIES = {
             "Hallucinations / incorrect output": [
                 "hallucin", "incorrect", "wrong", "inaccurate", "not correct",
@@ -525,8 +563,7 @@ def main():
         }
 
         def categorize_blocker(text):
-            if pd.isna(text):
-                return None
+            if pd.isna(text): return None
             text_lower = str(text).lower().strip()
             for category, keywords in BLOCKER_CATEGORIES.items():
                 if any(kw in text_lower for kw in keywords):
@@ -535,15 +572,21 @@ def main():
 
         blocker_series = fdf["Blocker"].dropna().str.strip()
         categorized = blocker_series.apply(categorize_blocker)
-        # Exclude "No blockers" and "Other" from display
         categorized = categorized[~categorized.isin(["No blockers", None])]
         blocker_data = categorized.value_counts().head(6).reset_index()
         blocker_data.columns = ["Blocker", "Count"]
 
+        st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
         for _, row in blocker_data.iterrows():
             b1, b2 = st.columns([5, 1])
-            b1.markdown(f"<p style='color:#FFFFFF;font-size:12px;margin:4px 0;line-height:1.4;'>• {row['Blocker']}</p>", unsafe_allow_html=True)
-            b2.markdown(f"<p style='color:#00C2C7;font-size:13px;font-weight:700;margin:4px 0;text-align:right;'>{row['Count']}</p>", unsafe_allow_html=True)
+            b1.markdown(
+                f"<p style='color:#CCDDEE;font-size:12px;font-family:Arial;margin:6px 0;line-height:1.5;'>• {row['Blocker']}</p>",
+                unsafe_allow_html=True
+            )
+            b2.markdown(
+                f"<p style='color:#00C2C7;font-size:13px;font-weight:700;font-family:Arial;margin:6px 0;text-align:right;'>{row['Count']}</p>",
+                unsafe_allow_html=True
+            )
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
