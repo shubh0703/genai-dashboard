@@ -74,7 +74,7 @@ st.markdown("""
     .kpi-sub {
         font-size: 11px;
         font-family: 'Source Sans Pro', Arial, sans-serif;
-        color: #8A93B0;
+        color: #FFFFFF;
         margin-top: 5px;
     }
     .kpi-sub-teal {
@@ -192,8 +192,14 @@ SHEET_ID = "1pBTpsIqJzK6CyhLIQz8H8wKSI3xLQzxa74L-JISFPvc"
 CALCULATED_SHEET = "Calculated"
 
 CHART_COLORS = [
-    "#FF6B00", "#4B9FE1", "#A259FF", "#00C2C7", "#FFB347",
-    "#57C785", "#FF4F6B", "#7EC8E3", "#FFA07A", "#B0C4DE"
+    "#4B9FE1", "#A259FF", "#00C2C7", "#57C785", "#FF6B00",
+    "#FFB347", "#FF4F6B", "#7EC8E3", "#B0C4DE", "#FFA07A"
+]
+
+# Single-series bar charts use a blue-to-teal gradient sequence
+BAR_GRADIENT = [
+    "#1E90FF", "#2196F3", "#2FA8E8", "#3AB8D4", "#40C4B8",
+    "#43CCA0", "#45D18A", "#57C785", "#6DCF6D", "#85CC55"
 ]
 
 PLOTLY_LAYOUT = dict(
@@ -504,7 +510,7 @@ def main():
     AXIS_STYLE = dict(color="#8A93B0", gridcolor="#333850", tickfont=dict(size=12, family="Source Sans Pro, Arial"))
     TICK_STYLE = dict(color="#FFFFFF", tickfont=dict(size=12, family="Source Sans Pro, Arial"), automargin=True)
     TITLE_FONT = dict(size=12, color="#8A93B0", family="Source Sans Pro, Arial")
-    BAR_COLOR  = CHART_COLORS[0]   # EPAM orange as primary bar color
+    BAR_COLOR  = "#2FA8E8"   # professional steel blue for single-series bars
 
     with col1:
         st.markdown('<div class="section-header">Top Activities / Use Cases</div>', unsafe_allow_html=True)
@@ -512,8 +518,9 @@ def main():
         act_data = act_series.value_counts().head(12).reset_index()
         act_data.columns = ["Activity", "Count"]
         act_data = act_data.sort_values("Count", ascending=True)
+        act_data["color"] = [BAR_GRADIENT[i % len(BAR_GRADIENT)] for i in range(len(act_data))]
         fig_act = px.bar(act_data, x="Count", y="Activity", orientation="h",
-                         color_discrete_sequence=[BAR_COLOR])
+                         color="color", color_discrete_map="identity")
         fig_act.update_layout(**{**PLOTLY_LAYOUT, "margin": dict(l=10, r=30, t=10, b=40)},
                               height=520, showlegend=False)
         fig_act.update_xaxes(**AXIS_STYLE, title=dict(text="Count", font=TITLE_FONT))
@@ -533,8 +540,9 @@ def main():
             lambda x: freq_order.index(x) if x in freq_order else 99
         )
         freq_data = freq_data.sort_values("sort_key", ascending=False).drop(columns="sort_key")
+        freq_data["color"] = [BAR_GRADIENT[i * 3 % len(BAR_GRADIENT)] for i in range(len(freq_data))]
         fig_freq = px.bar(freq_data, x="Count", y="Frequency", orientation="h",
-                          color_discrete_sequence=[BAR_COLOR])
+                          color="color", color_discrete_map="identity")
         fig_freq.update_layout(**{**PLOTLY_LAYOUT, "margin": dict(l=10, r=30, t=10, b=40)},
                                height=210, showlegend=False)
         fig_freq.update_xaxes(**AXIS_STYLE, title=dict(text="Count", font=TITLE_FONT))
@@ -546,8 +554,9 @@ def main():
         st.markdown('<div class="section-header">Avg Satisfaction by Project</div>', unsafe_allow_html=True)
         sat_proj = fdf.groupby("Project")["Satisfaction"].mean().reset_index().sort_values("Satisfaction", ascending=True)
         sat_proj["Satisfaction"] = sat_proj["Satisfaction"].round(1)
+        sat_proj["color"] = [BAR_GRADIENT[i % len(BAR_GRADIENT)] for i in range(len(sat_proj))]
         fig_sat = px.bar(sat_proj, x="Satisfaction", y="Project", orientation="h",
-                         color_discrete_sequence=[BAR_COLOR], text="Satisfaction")
+                         color="color", color_discrete_map="identity", text="Satisfaction")
         fig_sat.update_layout(**{**PLOTLY_LAYOUT, "margin": dict(l=10, r=50, t=10, b=40)},
                               height=310, showlegend=False)
         fig_sat.update_traces(
@@ -569,8 +578,9 @@ def main():
         trend_df["WeekLabel"] = trend_df["WeekStart"].dt.strftime("W%W: %b %d")
         week_data = trend_df.groupby(["WeekStart", "WeekLabel"])["Hours Saved"].sum().reset_index()
         week_data = week_data.sort_values("WeekStart")
+        week_data["color"] = [BAR_GRADIENT[i % len(BAR_GRADIENT)] for i in range(len(week_data))]
         fig_trend = px.bar(week_data, x="WeekLabel", y="Hours Saved",
-                           color_discrete_sequence=[BAR_COLOR])
+                           color="color", color_discrete_map="identity")
         fig_trend.update_layout(**{**PLOTLY_LAYOUT, "margin": dict(l=10, r=10, t=10, b=50)},
                                 height=250, showlegend=False)
         fig_trend.update_xaxes(**AXIS_STYLE, title=dict(text="Week", font=TITLE_FONT),
