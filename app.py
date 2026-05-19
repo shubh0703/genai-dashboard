@@ -68,7 +68,7 @@ st.markdown("""
         font-size: 22px;
         font-weight: 700;
         font-family: 'Source Sans Pro', Arial, sans-serif;
-        color: #FFFFFF;
+        color: #FF6B00;
         line-height: 1.15;
     }
     .kpi-sub {
@@ -80,7 +80,7 @@ st.markdown("""
     .kpi-sub-teal {
         font-size: 11px;
         font-family: 'Source Sans Pro', Arial, sans-serif;
-        color: #FF6B00;
+        color: #FFFFFF;
         margin-top: 5px;
         font-weight: 600;
     }
