@@ -459,8 +459,8 @@ def main():
         act_data = act_data.sort_values("Count", ascending=True)
         fig_act = px.bar(act_data, x="Count", y="Activity", orientation="h",
                          color_discrete_sequence=[BAR_COLOR])
-        fig_act.update_layout(**PLOTLY_LAYOUT, height=520, showlegend=False,
-                              margin=dict(l=10, r=30, t=10, b=40))
+        fig_act.update_layout(**{**PLOTLY_LAYOUT, "margin": dict(l=10, r=30, t=10, b=40)},
+                              height=520, showlegend=False)
         fig_act.update_xaxes(**AXIS_STYLE, title=dict(text="Count", font=TITLE_FONT))
         fig_act.update_yaxes(**TICK_STYLE, title=dict(text="Activity", font=TITLE_FONT))
         fig_act.update_traces(
@@ -480,8 +480,8 @@ def main():
         freq_data = freq_data.sort_values("sort_key", ascending=False).drop(columns="sort_key")
         fig_freq = px.bar(freq_data, x="Count", y="Frequency", orientation="h",
                           color_discrete_sequence=[BAR_COLOR])
-        fig_freq.update_layout(**PLOTLY_LAYOUT, height=210, showlegend=False,
-                               margin=dict(l=10, r=30, t=10, b=40))
+        fig_freq.update_layout(**{**PLOTLY_LAYOUT, "margin": dict(l=10, r=30, t=10, b=40)},
+                               height=210, showlegend=False)
         fig_freq.update_xaxes(**AXIS_STYLE, title=dict(text="Count", font=TITLE_FONT))
         fig_freq.update_yaxes(**TICK_STYLE, title=dict(text="", font=TITLE_FONT))
         fig_freq.update_traces(marker_line_width=0,
@@ -493,8 +493,8 @@ def main():
         sat_proj["Satisfaction"] = sat_proj["Satisfaction"].round(1)
         fig_sat = px.bar(sat_proj, x="Satisfaction", y="Project", orientation="h",
                          color_discrete_sequence=[BAR_COLOR], text="Satisfaction")
-        fig_sat.update_layout(**PLOTLY_LAYOUT, height=310, showlegend=False,
-                              margin=dict(l=10, r=50, t=10, b=40))
+        fig_sat.update_layout(**{**PLOTLY_LAYOUT, "margin": dict(l=10, r=50, t=10, b=40)},
+                              height=310, showlegend=False)
         fig_sat.update_traces(
             textposition="outside",
             textfont=dict(color="#FFFFFF", size=11, family="Arial"),
@@ -516,8 +516,8 @@ def main():
         week_data = week_data.sort_values("WeekStart")
         fig_trend = px.bar(week_data, x="WeekLabel", y="Hours Saved",
                            color_discrete_sequence=[BAR_COLOR])
-        fig_trend.update_layout(**PLOTLY_LAYOUT, height=250, showlegend=False,
-                                margin=dict(l=10, r=10, t=10, b=50))
+        fig_trend.update_layout(**{**PLOTLY_LAYOUT, "margin": dict(l=10, r=10, t=10, b=50)},
+                                height=250, showlegend=False)
         fig_trend.update_xaxes(**AXIS_STYLE, title=dict(text="Week", font=TITLE_FONT),
                                tickangle=-30)
         fig_trend.update_yaxes(**AXIS_STYLE, title=dict(text="Hours Saved", font=TITLE_FONT))
