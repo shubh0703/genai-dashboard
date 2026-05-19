@@ -180,7 +180,7 @@ PLOTLY_LAYOUT = dict(
 )
 
 # ─── Data Loading ─────────────────────────────────────────────────────────────
-@st.cache_data(ttl=900)  # 15-minute cache
+@st.cache_data(ttl=1800)  # 30-minute cache
 def load_data():
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={CALCULATED_SHEET}"
     df = pd.read_csv(url)
